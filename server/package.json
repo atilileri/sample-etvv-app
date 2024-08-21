@@ -3,12 +3,11 @@
   "version": "1.0.0",
   "description": "",
   "main": "main.js",
-  
   "scripts": {
-    "dev" : "nodemon"
+    "dev": "nodemon"
   },
-  "nodemonConfig":{
-     "watch": [
+  "nodemonConfig": {
+    "watch": [
       "src"
     ],
     "exec": "tsc && node ./dist/main.js",
@@ -20,7 +19,8 @@
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.1",
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "spotify-web-api-node": "^5.0.2"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
