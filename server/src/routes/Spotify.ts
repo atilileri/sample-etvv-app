@@ -85,6 +85,8 @@ router.get("/cb",(req,res,_next)=>{
   const error = req.query.error;
   const code = req.query.code;
   // const state = req.query.state;
+  console.log("cb");
+  console.log(code);
 
   if (error) {
     console.error('Callback Error:', error);
@@ -106,21 +108,40 @@ router.get("/cb",(req,res,_next)=>{
       console.log('refresh_token:', refresh_token);
 
       console.log(
-        `Sucessfully retreived access token. Expires in ${expires_in} s.`
+        `Sucessfullasdy retreived access token. Expires in ${expires_in} s.`
       );
-      res.send('Success! You can now close the window.');
+      
+        // Get the authenticated user
+  spotifyApi.getMe()
+  .then(function(data:any) {
+    console.log('Some information about the authenticated user', data.body);
+    res.status(200).json({ userInfo: data.body });
 
-      setInterval(async () => {
-        const data = await spotifyApi.refreshAccessToken();
-        const access_token = data.body['access_token'];
-
-        console.log('The access token has been refreshed!');
-        console.log('access_token:', access_token);
-        spotifyApi.setAccessToken(access_token);
-      }, expires_in / 2 * 1000);
+  }, function(err:any) {
+    console.log('Something went wrong!', err);
+  });
+      // res.send('Success! You can now close the window.');
+      
+      // setInterval(async () => {
+        //   const data = await spotifyApi.refreshAccessToken();
+        //   const access_token = data.body['access_token'];
+        
+        //   console.log('The access token has been refreshed!');
+        //   console.log('access_token:', access_token);
+        //   spotifyApi.setAccessToken(access_token);
+        // }, expires_in / 2 * 1000);
     })
     .catch((error: any) => {
       console.error('Error getting Tokens:', error);
       res.send(`Error getting Tokens: ${error}`);
+    });
+    
+    console.log("Get User 2")
+  // Get the authenticated user
+  spotifyApi.getMe()
+    .then(function(data:any) {
+      console.log('Some information about the authenticated user', data.body);
+    }, function(err:any) {
+      console.log('Something went wrong!', err);
     });
 });

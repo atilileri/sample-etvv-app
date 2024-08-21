@@ -4,6 +4,23 @@ import { reactive, ref } from "vue";
 // Global constant containing the API base URL -> /api
 const baseURL = __API_PATH__;
 
+// On page load, try to fetch auth code from current browser search URL
+const args = new URLSearchParams(window.location.search);
+const code = args.get('code');
+
+// If we find a code, we're in a callback, do a token exchange
+if (code) {
+  // save token
+  // var response = await fetch(baseURL + "/spt/cb");
+
+  // Remove code from URL so we can refresh correctly.
+  const url = new URL(window.location.href);
+  // url.searchParams.delete("code");
+
+  // const updatedUrl = url.search ? url.href : url.href.replace('?', '');
+  window.history.replaceState({}, document.title, url.origin /*was updatedUrl*/);
+}
+
 // Reactive variables for managing loading state and response message
 const isLoading = ref(false);
 const message = ref("");
@@ -62,6 +79,17 @@ async function fetchAPI(endpoint:string="") {
   }
 }
 
+window.onload = async function() {
+  
+  if (code) {
+    isLoading.value = true;
+    
+  var response = await fetch(baseURL + "/spt/cb?" + new URLSearchParams({code: code}) );
+  // console.log(response)
+  message.value = (await response.json()).userInfo;
+  isLoading.value = false;
+  }
+};
 </script>
 
 <template>
