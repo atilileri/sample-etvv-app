@@ -1,141 +1,126 @@
 // Spotify Handler 
-// Importing express module 
 import express from "express" 
-// import { ParsedQs } from "qs";
 export const router=express.Router() 
+var SpotifyWebApi = require('spotify-web-api-node');
 
-// Handling requests using router 
-router.get("/",(_req,res,_next)=>{ 
-    // res.send("This is the Spotify request");
-    // todo - ai : check if we logged in
-    // if not logged in, try logging in
-    const redirectRoute = redirectToSpotifyAuthorize();
+// // Handling requests using router 
+// router.get("/",(_req,res,_next)=>{ 
+//     // res.send("This is the Spotify request");
+//     // todo - ai : check if we logged in
+//     // if not logged in, try logging in
+//     const redirectRoute = redirectToSpotifyAuthorize();
 
-    res.status(200).redirect(redirectRoute);
-})
-// callback after spotify authorization
-router.get("/cb",(req, res,_next)=>{ 
-    // todo - see what else is returned;
-    // todo - handle failed auth
-    console.log(req);
-    const code = <string> req.query.code;
-    const token = getToken(code);
-    currentToken.save(token);
-    res.status(200).redirect("/playlists");
-})
-// get user's playlists
-router.get("/playlists",(_req,res,_next)=>{ 
-    // todo - see what else is returned;
-    // todo - handle failed auth
-    // If we have a token, we're logged in, so fetch user data and render logged in template
-    if (currentToken.access_token) {
-        const userData = getUserData();
-        res.status(200).json({ message: userData });
-    }
+//     res.status(200).redirect(redirectRoute);
+// })
+// // callback after spotify authorization
+// router.get("/cb",(req, res,_next)=>{ 
+//     // todo - see what else is returned;
+//     // todo - handle failed auth
+//     console.log(req);
+//     const code = <string> req.query.code;
+//     const token = getToken(code);
+//     currentToken.save(token);
+//     res.status(200).redirect("/playlists");
+// })
+// // get user's playlists
+// router.get("/playlists",(_req,res,_next)=>{ 
+//     // todo - see what else is returned;
+//     // todo - handle failed auth
+//     // If we have a token, we're logged in, so fetch user data and render logged in template
+//     if (currentToken.access_token) {
+//         const userData = getUserData();
+//         res.status(200).json({ message: userData });
+//     }
     
-    // Otherwise we're not logged in, so render the login template
-    if (!currentToken.access_token) {
-        // renderTemplate("main", "login");
-  }
-})
+//     // Otherwise we're not logged in, so render the login template
+//     if (!currentToken.access_token) {
+//         // renderTemplate("main", "login");
+//   }
+// })
 
-/* 
-** Authorization Code with PKCE Flow
-** https://developer.spotify.com/documentation/web-api/tutorials/code-pkce-flow
- */
 
 const clientId = '6ed196785dbb45bcb629ccc36aeab596'; // your clientId
-const redirectUrl = 'eg:http://localhost:8080';        // your redirect URL - must be localhost URL and/or HTTPS
+const clientSecret = '496304503b04439abfc94fee11330408'
+// const redirectUrl = 'http://localhost:5173/spt/cb';        // your redirect URL - must be localhost URL and/or HTTPS
 
-const authorizationEndpoint = "https://accounts.spotify.com/authorize";
-const tokenEndpoint = "https://accounts.spotify.com/api/token";
-const scope = 'user-read-private user-read-email';
+// const authorizationEndpoint = "https://accounts.spotify.com/authorize";
+// const tokenEndpoint = "https://accounts.spotify.com/api/token";
+// const scope = 'user-read-private user-read-email';
 
-var codeVerif:string
-var codeChallenge:string
-generateVerifAndChallenge()
-var accessToken:string
-var refreshToken:string
-var expiresIn:number
-var expireTime:Date
+const scopes = [
+  'ugc-image-upload',
+  'user-read-playback-state',
+  'user-modify-playback-state',
+  'user-read-currently-playing',
+  'streaming',
+  'app-remote-control',
+  'user-read-email',
+  'user-read-private',
+  'playlist-read-collaborative',
+  'playlist-modify-public',
+  'playlist-read-private',
+  'playlist-modify-private',
+  'user-library-modify',
+  'user-library-read',
+  'user-top-read',
+  'user-read-playback-position',
+  'user-read-recently-played',
+  'user-follow-read',
+  'user-follow-modify'
+];
 
-// Data structure that manages the current active token, caching it in global parameters
-const currentToken = {
-    get access_token() { return accessToken; },
-    get refresh_token() { return refreshToken; },
-    get expires_in() { return expiresIn },
-    get expires() { return expireTime },
-  
-    save: async function (response: Promise<any>) {
-      const { access_token, refresh_token, expires_in } = await response;
-      accessToken = access_token;
-      refreshToken = refresh_token;
-      expiresIn =  expires_in;
-  
-      const now = new Date();
-      const expiry = new Date(now.getTime() + (expires_in * 1000));
-      expireTime = expiry;
-    }
-  };
+const spotifyApi = new SpotifyWebApi({
+  redirectUri: 'http://localhost:5173/spt/cb',
+  clientId: clientId,
+  clientSecret: clientSecret
+});
 
-// Spotify API Calls
-async function getToken(code: string) : Promise<JSON> {
-    const code_verifier = codeVerif;
-  
-    const response = await fetch(tokenEndpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams({
-        client_id: clientId,
-        grant_type: 'authorization_code',
-        code: code,
-        redirect_uri: redirectUrl,
-        code_verifier: code_verifier!, // todo - ai : check / make sure this is not null
-      }),
-    });
-  
-    return await response.json();
+router.get("/",(_req,res,_next)=>{ 
+  res.status(200).json({ authURL: spotifyApi.createAuthorizeURL(scopes) });
+
+  // res.redirect(spotifyApi.createAuthorizeURL(scopes));
+});
+
+router.get("/cb",(req,res,_next)=>{ 
+  const error = req.query.error;
+  const code = req.query.code;
+  // const state = req.query.state;
+
+  if (error) {
+    console.error('Callback Error:', error);
+    res.send(`Callback Error: ${error}`);
+    return;
   }
 
-async function generateVerifAndChallenge() {
-  const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  const randomValues = crypto.getRandomValues(new Uint8Array(64));
-  const randomString = randomValues.reduce((acc, x) => acc + possible[x % possible.length], "");
+  spotifyApi
+    .authorizationCodeGrant(code)
+    .then((data: { body: { [x: string]: any; }; }) => {
+      const access_token = data.body['access_token'];
+      const refresh_token = data.body['refresh_token'];
+      const expires_in = data.body['expires_in'];
 
-  const code_verifier = randomString;
-  const data = new TextEncoder().encode(code_verifier);
-  const hashed = await crypto.subtle.digest('SHA-256', data);
-  
-  codeVerif = code_verifier;
+      spotifyApi.setAccessToken(access_token);
+      spotifyApi.setRefreshToken(refresh_token);
 
-  codeChallenge = btoa(String.fromCharCode(...new Uint8Array(hashed)))
-    .replace(/=/g, '')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_');
-}
+      console.log('access_token:', access_token);
+      console.log('refresh_token:', refresh_token);
 
-function redirectToSpotifyAuthorize() {
-  const authUrl = new URL(authorizationEndpoint)
-  const params = {
-    response_type: 'code',
-    client_id: clientId,
-    scope: scope,
-    code_challenge_method: 'S256',
-    code_challenge: codeChallenge,
-    redirect_uri: redirectUrl,
-  };
+      console.log(
+        `Sucessfully retreived access token. Expires in ${expires_in} s.`
+      );
+      res.send('Success! You can now close the window.');
 
-  authUrl.search = new URLSearchParams(params).toString();
-  return authUrl.toString(); // Redirect the user to the authorization server for login
-}
+      setInterval(async () => {
+        const data = await spotifyApi.refreshAccessToken();
+        const access_token = data.body['access_token'];
 
-async function getUserData() {
-    const response = await fetch("https://api.spotify.com/v1/me", {
-      method: 'GET',
-      headers: { 'Authorization': 'Bearer ' + currentToken.access_token },
+        console.log('The access token has been refreshed!');
+        console.log('access_token:', access_token);
+        spotifyApi.setAccessToken(access_token);
+      }, expires_in / 2 * 1000);
+    })
+    .catch((error: any) => {
+      console.error('Error getting Tokens:', error);
+      res.send(`Error getting Tokens: ${error}`);
     });
-  
-    return await response.json();
-  }
+});

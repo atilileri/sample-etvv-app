@@ -18,14 +18,40 @@ async function fetchAPI(endpoint:string="") {
     console.log(relURL);
 
     // Send a GET request to the server
-    const response = await fetch(relURL);
+    var response = await fetch(relURL);
 
     // Parse the JSON response
-    const data = await response.json();
-    console.log(data);
+    var data = await response.json();
+    console.log("Auth URL: ", data.authURL);
+
+    // data = await response.json();
+    // console.log("resp: ", data);
+
+
 
     // Update the message with the response data
     message.value = relURL + " says : \n" + JSON.stringify(data);
+
+    // get auth
+    // response = await fetch(data.authURL);
+    // window.location.replace(data.authURL);
+
+
+    const scope = 'user-read-private user-read-email';
+    const clientId = '6ed196785dbb45bcb629ccc36aeab596'; // your clientId
+    const authorizationEndpoint = "https://accounts.spotify.com/authorize";
+    const authUrl = new URL(authorizationEndpoint)
+  const params = {
+    response_type: 'code',
+    client_id: clientId,
+    scope: scope,
+    code_challenge_method: 'S256',
+    redirect_uri: 'http://localhost:5173/spt/cb',
+  };
+
+  authUrl.search = new URLSearchParams(params).toString();
+  window.location.href = authUrl.toString(); // Redirect the user to the authorization server for login
+
   } catch (error) {
     // Handle errors
     message.value = "Error fetching data";
