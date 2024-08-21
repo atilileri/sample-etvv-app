@@ -1,52 +1,13 @@
 // Spotify Handler 
 import express from "express" 
+import { routes as rt } from "../../../common/common";
 export const router=express.Router() 
 var SpotifyWebApi = require('spotify-web-api-node');
 
-// // Handling requests using router 
-// router.get("/",(_req,res,_next)=>{ 
-//     // res.send("This is the Spotify request");
-//     // todo - ai : check if we logged in
-//     // if not logged in, try logging in
-//     const redirectRoute = redirectToSpotifyAuthorize();
-
-//     res.status(200).redirect(redirectRoute);
-// })
-// // callback after spotify authorization
-// router.get("/cb",(req, res,_next)=>{ 
-//     // todo - see what else is returned;
-//     // todo - handle failed auth
-//     console.log(req);
-//     const code = <string> req.query.code;
-//     const token = getToken(code);
-//     currentToken.save(token);
-//     res.status(200).redirect("/playlists");
-// })
-// // get user's playlists
-// router.get("/playlists",(_req,res,_next)=>{ 
-//     // todo - see what else is returned;
-//     // todo - handle failed auth
-//     // If we have a token, we're logged in, so fetch user data and render logged in template
-//     if (currentToken.access_token) {
-//         const userData = getUserData();
-//         res.status(200).json({ message: userData });
-//     }
-    
-//     // Otherwise we're not logged in, so render the login template
-//     if (!currentToken.access_token) {
-//         // renderTemplate("main", "login");
-//   }
-// })
-
-
-const clientId = '6ed196785dbb45bcb629ccc36aeab596'; // your clientId
+// intialize the api module
+const clientId = '6ed196785dbb45bcb629ccc36aeab596';
 const clientSecret = '496304503b04439abfc94fee11330408'
-// const redirectUrl = 'http://localhost:5173/spt/cb';        // your redirect URL - must be localhost URL and/or HTTPS
-
-// const authorizationEndpoint = "https://accounts.spotify.com/authorize";
-// const tokenEndpoint = "https://accounts.spotify.com/api/token";
-// const scope = 'user-read-private user-read-email';
-
+const redirectUri = 'http://localhost:5173/spt/cb'
 const scopes = [
   'ugc-image-upload',
   'user-read-playback-state',
@@ -68,20 +29,18 @@ const scopes = [
   'user-follow-read',
   'user-follow-modify'
 ];
-
 const spotifyApi = new SpotifyWebApi({
-  redirectUri: 'http://localhost:5173/spt/cb',
+  redirectUri: redirectUri,
   clientId: clientId,
   clientSecret: clientSecret
 });
 
-router.get("/",(_req,res,_next)=>{ 
+// route login
+router.get(`/${rt.login}`,(_req,res,_next)=>{ 
   res.status(200).json({ authURL: spotifyApi.createAuthorizeURL(scopes) });
-
-  // res.redirect(spotifyApi.createAuthorizeURL(scopes));
 });
 
-router.get("/cb",(req,res,_next)=>{ 
+router.get(`/${rt.callback}`,(req,res,_next)=>{ 
   const error = req.query.error;
   const code = req.query.code;
   // const state = req.query.state;

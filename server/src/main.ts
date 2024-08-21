@@ -1,6 +1,7 @@
 import cors from "cors";
 import "dotenv/config";
 import express from 'express';
+import { routes as rt} from "../../common/common.js";
 const apiRouter = express.Router();
 
 // Importing all the routes 
@@ -13,7 +14,7 @@ const app = express();
 app.use(cors()); // enable `CORS` for all routes
 app.use(express.json()); // enable parsing of json request body
 app.use(express.urlencoded({ extended: true })); 
-app.use('/api', apiRouter);
+app.use(`/${rt.api}`, apiRouter);
 
 // set the port and provide fallback 
 // process.env is how we access environment variables with dotenv
@@ -24,8 +25,8 @@ apiRouter.get('/', (_req, res) => {
     res.status(200).json({ message: 'Hello from the APIs!' });
 })
 // route handlers for different platform APIs
-apiRouter.use("/spt", sptRouter);
-apiRouter.use("/ytm", ytmRouter);
+apiRouter.use(`/${rt.spotify}`, sptRouter);
+apiRouter.use(`/${rt.youtubeMusic}`, ytmRouter);
 
 // start the server
 app.listen(PORT, () => {
