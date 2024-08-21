@@ -9,7 +9,7 @@ router.get("/",(_req,res,_next)=>{
     // res.send("This is the Spotify request");
     // todo - ai : check if we logged in
     // if not logged in, try logging in
-    const redirectRoute = await redirectToSpotifyAuthorize();
+    const redirectRoute = redirectToSpotifyAuthorize();
 
     res.status(200).redirect(redirectRoute);
 })
@@ -52,10 +52,12 @@ const tokenEndpoint = "https://accounts.spotify.com/api/token";
 const scope = 'user-read-private user-read-email';
 
 var codeVerif:string
+var codeChallenge:string
+generateVerifAndChallenge()
 var accessToken:string
 var refreshToken:string
 var expiresIn:number
-var expireTime:Date;
+var expireTime:Date
 
 // Data structure that manages the current active token, caching it in global parameters
 const currentToken = {
@@ -97,7 +99,7 @@ async function getToken(code: string) : Promise<JSON> {
     return await response.json();
   }
 
-async function redirectToSpotifyAuthorize() {
+async function generateVerifAndChallenge() {
   const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   const randomValues = crypto.getRandomValues(new Uint8Array(64));
   const randomString = randomValues.reduce((acc, x) => acc + possible[x % possible.length], "");
@@ -105,21 +107,23 @@ async function redirectToSpotifyAuthorize() {
   const code_verifier = randomString;
   const data = new TextEncoder().encode(code_verifier);
   const hashed = await crypto.subtle.digest('SHA-256', data);
+  
+  codeVerif = code_verifier;
 
-  const code_challenge_base64 = btoa(String.fromCharCode(...new Uint8Array(hashed)))
+  codeChallenge = btoa(String.fromCharCode(...new Uint8Array(hashed)))
     .replace(/=/g, '')
     .replace(/\+/g, '-')
     .replace(/\//g, '_');
+}
 
-  codeVerif = code_verifier;
-
+function redirectToSpotifyAuthorize() {
   const authUrl = new URL(authorizationEndpoint)
   const params = {
     response_type: 'code',
     client_id: clientId,
     scope: scope,
     code_challenge_method: 'S256',
-    code_challenge: code_challenge_base64,
+    code_challenge: codeChallenge,
     redirect_uri: redirectUrl,
   };
 
